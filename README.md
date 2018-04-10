@@ -29,9 +29,11 @@ You love the game, and you wish you could play it with your friend (in a new way
 
 ### Task  
 
-1. Listen for input from the player who controls the game scene/states.  
-2. Listen for input from the play who plays the snake game.  
-3. Game logic decides the next game state (win/lose/continue).  
+1. Player 1 plugs in Game Boy (Raspberry Pi) to power and turns it on.  
+2. Player 1 selects whether or not to start game.  
+3. Player 1 plays with joystick.  
+4. Player 2 goes to game web page.  
+5. Player 2 puts target in the game in the browser.     
 
 ### Control  
 
