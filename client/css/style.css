@@ -1,0 +1,124 @@
+* {
+  font-family: -apple-system, 'Open Sans', sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #1bbaff;
+}
+
+.view {
+  display: flex;
+  height: 820px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.title-grid-view {
+  height: 720px;
+  height: 720px;
+  margin-left: 60px;
+  margin-right: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  height: 6em;
+  display: flex;
+  justify-content: center;
+}
+
+h1 {
+  font-family: 'Amaranth', -apple-system, sans-serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 4em;
+  color: #feff3b;
+  text-shadow: 0.05em 0.05em 0em #eeb82b;
+}
+
+.grid {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 580px;
+  height: 580px;
+  min-width: 580px;
+  min-height: 580px;
+  border-style: solid;
+  border-width: 40px;
+  border-color: #8bb847;
+  margin-top: 2em;
+}
+
+.cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 12.5%;
+  height: 12.5%;
+}
+
+.button {
+  display: none;
+  width: 80%;
+  height: 80%;
+  background-color: #cb1b45;
+  border-style: none;
+  border-radius: 50%;
+}
+
+.instructions-view {
+  width: 580px;
+  height: 720px;
+  min-width: 580px;
+  min-height: 720px;
+  margin-left: 60px;
+  margin-right: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.instructions {
+  display: flex;
+  flex-direction: column;
+  width: 580px;
+  min-width: 580px;
+  padding: 60px;
+  background-color: #f2ab57;
+  border-radius: 50px;
+}
+
+.instructions h2 {
+  font-family: 'Amaranth', -apple-system, sans-serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 3em;
+  color: #fff;
+}
+
+.instructions p {
+  margin: 30px 0px;
+  font-family: -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 1.5em;
+  line-height: 1.6;
+  color: #995200;
+}
