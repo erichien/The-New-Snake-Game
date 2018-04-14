@@ -42,4 +42,4 @@ You love the game, and you wish you could play it with your friend (in a new way
 3. Laptop: uses the mouse to select the positions of targets   
 
 
-https://docs.google.com/document/d/1pih_PdQva_qHCADwOjuvehQyMlAp6yqmLNGbfjWgIHE/edit?usp=sharing
+https://goo.gl/yWCmYw
