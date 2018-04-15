@@ -1,5 +1,6 @@
 (() => {
   document.addEventListener('DOMContentLoaded', () => {
+    let socket = io(); // websocket to the server
     let grid = document.querySelector('.grid');
 
     _assignCellColor = (cell, i, j) => {
@@ -50,5 +51,31 @@
     //     cell.style.backgroundColor = '#A1CB4A';
     //   }
     // }
+
+    // socket.on('reset', function() { // on a 'reset' message clean and reste firstMessage
+    //   firstMessage=true;
+    //   ctx.clear();
+    // });
+    //
+    // socket.on('new-pos', function(newPosition) { // handling new sensor values
+    //
+    //   //TODO: Map the incoming 10-bit numbers to the height and width of the screen.
+    //   // See https://github.com/soulwire/sketch.js/wiki/API for sketch references
+    //
+    //   if(firstMessage){ // if its the first message store that value as previous
+    //     firstMessage=false;
+    //     previousPosition=newPosition;
+    //   }else{ // any other message we use to draw.
+    //     ctx.lineCap = 'round';
+    //     ctx.lineJoin = 'round';
+    //     ctx.fillStyle = ctx.strokeStyle = COLOUR;
+    //     ctx.lineWidth = radius;
+    //     ctx.beginPath();  //begin a adrawing
+    //     ctx.moveTo( previousPosition[0], previousPosition[1] ); // from
+    //     ctx.lineTo( newPosition[0],  newPosition[1]); // to
+    //     ctx.stroke(); // and only draw a stroke
+    //     previousPosition=newPosition; // update to the new position.
+    //    }
+    // });
   });
 })();

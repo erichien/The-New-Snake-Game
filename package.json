@@ -1,0 +1,21 @@
+{
+  "name": "the-new-snake-game",
+  "version": "0.0.1",
+  "description": "A multiplayer Snake Game with a game designer role and player role",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/virtuositeit/The-New-Snake-Game"
+  },
+  "author": "Eric Chien, Yating Zhan",
+  "license": "MIT",
+  "homepage": "https://github.com/virtuositeit/The-New-Snake-Game",
+  "dependencies": {
+    "express": "^4.16.3",
+    "socket.io": "^2.0.4",
+    "serialport": "^6.1.1"
+  }
+}
