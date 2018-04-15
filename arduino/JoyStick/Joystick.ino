@@ -7,18 +7,21 @@ const int X_ORIGIN = 520;
 const int Y_ORIGIN = 526;
 const int CHANGE_THRESHOLD = 100;  // defines sensitivity to changing x and y's direction
 
-int curXDir = 0; // -512 to -100 (left), 0 (unchanged), 100 to 512 (right)
-int curYDir = 0;
-int oldXDir = 0;
-int oldYDir = 0;
+// int curXDir = 0; // -512 to -100 (left), 0 (unchanged), 100 to 512 (right)
+// int curYDir = 0;
+// int oldXDir = 0;
+// int oldYDir = 0;
+int xDir = 0;
+int yDir = 0;
 int xValue = X_ORIGIN; // 0 to 1024
 int yValue = Y_ORIGIN;
-byte curButtonState = HIGH;  // since pull-up resistor is used, assume switch open, initial pin value HIGH
-byte oldButtonState = HIGH;
+// byte curButtonState = HIGH;  // since pull-up resistor is used, assume switch open, initial pin value HIGH
+// byte oldButtonState = HIGH;
+byte buttonState = HIGH;
 bool buttonPressed = false;
-bool xDirChanged = false;
-bool yDirChanged = false;
-bool buttonStateChanged = false;
+// bool xDirChanged = false;
+// bool yDirChanged = false;
+// bool buttonStateChanged = false;
 unsigned long lastReadTime = 0;  // when the button last changed state
 
 
@@ -36,20 +39,25 @@ void setup() {
 void readJoystick() {
   xValue = analogRead(X_PIN);
   yValue = analogRead(Y_PIN);
-  curButtonState = digitalRead(BUTTON_PIN);
+  // curButtonState = digitalRead(BUTTON_PIN);
+  buttonState = digitalRead(BUTTON_PIN);
   lastReadTime = millis();
   Serial.println(xValue);
 
   // curDir is the signed distance to the origin if its abs(distance) >= threshold, else 0
   if (abs(xValue - X_ORIGIN) >= CHANGE_THRESHOLD) {
-    curXDir = xValue - X_ORIGIN;
+    // curXDir = xValue - X_ORIGIN;
+    xDir = xValue - X_ORIGIN;
   } else {
-    curXDir = 0;
+    // curXDir = 0;
+    xDir = 0;
   }
   if (abs(yValue - Y_ORIGIN) >= CHANGE_THRESHOLD) {
-    curYDir = yValue - Y_ORIGIN;
+    // curYDir = yValue - Y_ORIGIN;
+    yDir = yValue - Y_ORIGIN;
   } else {
-    curYDir = 0;
+    // curYDir = 0;
+    yDir = 0;
   }
 }
 
@@ -69,6 +77,13 @@ void loop() {
   if (millis() - lastReadTime >= DEBOUNCE_DELAY) { // debounce
     readJoystick();
 
+    String joystickState = String(xDir) + ',' + String(yDir) + ',' + String(isPressed(buttonState));
+    Serial.println(joystickState);
+
+  /*
+    // general navigation with joystick has different interaction from the game logic
+    // -> take care of the game logic in server code, Joystick output should be general
+
     // only send new data to server when curXDir or curYDir is not 0, and is different from its last state
     // oldDir could be 0, if curDir !=0 -> xDirChanged = True
     // curDir and oldCur must first divide by abs value to get +-1, to prevent overflow
@@ -85,11 +100,6 @@ void loop() {
     if (xDirChanged || yDirChanged || buttonStateChanged) { // only send new state when any value changes
 
       if (xDirChanged) {
-        Serial.print(oldXDir);
-        Serial.print('-');
-        Serial.print(curXDir);
-        Serial.print('-');
-        Serial.println( (curXDir * oldXDir) );
         oldXDir = curXDir;
       }
       if (yDirChanged) {
@@ -103,5 +113,6 @@ void loop() {
       String newState = String(oldXDir) + ',' + String(oldYDir) + ',' + String(isPressed(oldButtonState));
       Serial.println(newState);
     }
+  */
   }
 }
