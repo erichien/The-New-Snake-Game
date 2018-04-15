@@ -25,6 +25,8 @@ const parser = new readLine({
   delimiter: '\r\n'
 });
 
+// TODO: calculate whether or not to change snake's moving direction: e.g. can't move opposite dir
+
 // Read data that is available on the serial port and send it to the websocket
 serial.pipe(parser);
 parser.on('data', function(data) {
