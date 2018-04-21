@@ -1,5 +1,5 @@
-const int X_PIN = A1;
-const int Y_PIN = A0;
+const int X_PIN = A4;
+const int Y_PIN = A5;
 const int BUTTON_PIN = 2;
 const int LED_PIN = 13;
 const unsigned long DEBOUNCE_DELAY = 10;  // milliseconds

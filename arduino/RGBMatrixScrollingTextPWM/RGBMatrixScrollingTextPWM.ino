@@ -1,0 +1,279 @@
+/*
+ *  Adapted from https://youtu.be/8SXR32OAuxM
+ */
+
+#include <avr/pgmspace.h> // Library for storing data in program memory instead of SRAM.
+
+#define __latchBit 4      // Constants used to directly manipulate the ports used for serial communication with the latches via the shiftOutFast subroutine
+#define __dataBit 3
+#define __clockBit 5
+#define __shiftPORT PORTD
+
+const uint32_t font[192] PROGMEM = { // This array contains the individual bitmaps for the 96 characters that can be displayed on the 8x8 matrix.  
+                                     // Note that they are stored in the Arduino's program memory space rather than SRAM to conserve as much of the 2K of SRAM as possible
+                                     // Each character is stored in 2 32 bit unsigned integers (pgmspace.h doesn't have a means of storing a single unsigned 64 bit integer)
+  0x00000000, 0x00000000,    //
+  0x00000000, 0x2F000000,    // !
+  0x00000300, 0x03000000,    // "
+  0x00143E14, 0x3E140000,    // #
+  0x0000242A, 0x7F2A1200,    // $
+  0x0205150A, 0x142A2810,    // %
+  0x00001629, 0x29111028,    // &
+  0x00000000, 0x03000000,    // '
+  0x00000C12, 0x21000000,    // (
+  0x00000021, 0x120C0000,    // )
+  0x0000150E, 0x1F0E1500,    // *
+  0x00000808, 0x3E080800,    // +
+  0x00000040, 0x20000000,    // ,
+  0x00000808, 0x08080000,    // -
+  0x00000000, 0x20000000,    // .
+  0x00201008, 0x04020100,    // /
+  0x000C1221, 0x21120C00,    // 0
+  0x00000022, 0x3F200000,    // 1
+  0x00223129, 0x29252200,    // 2
+  0x00122129, 0x29251200,    // 3
+  0x00181412, 0x3F100000,    // 4
+  0x00172525, 0x25251900,    // 5
+  0x001E2525, 0x25251800,    // 6
+  0x00211109, 0x05030100,    // 7
+  0x001A2525, 0x25251A00,    // 8
+  0x00062929, 0x29291E00,    // 9
+  0x00000000, 0x24000000,    // :
+  0x00000040, 0x24000000,    // ;
+  0x00080814, 0x14222200,    // <
+  0x00141414, 0x14141400,    // =
+  0x00222214, 0x14080800,    // >
+  0x00020129, 0x09060000,    // ?
+  0x182442BA, 0xAABE0000,    // @
+  0x00300C0B, 0x0B0C3000,    // A
+  0x003F2525, 0x251A0000,    // B
+  0x0C122121, 0x21120000,    // C
+  0x003F2121, 0x211E0000,    // D
+  0x003F2525, 0x25210000,    // E
+  0x003F0505, 0x05010000,    // F
+  0x0C122129, 0x291A0000,    // G
+  0x003F0404, 0x04043F00,    // H
+  0x00002121, 0x3F212100,    // I
+  0x00102021, 0x211F0000,    // J
+  0x003F080C, 0x12210000,    // K
+  0x003F2020, 0x20202000,    // L
+  0x003F0204, 0x0804023F,    // M
+  0x003F0204, 0x08103F00,    // N
+  0x00001E21, 0x21211E00,    // O
+  0x003F0505, 0x05020000,    // P
+  0x00001E21, 0x21215E00,    // Q
+  0x003F050D, 0x15220000,    // R
+  0x00001225, 0x29291200,    // S
+  0x00010101, 0x3F010101,    // T
+  0x001F2020, 0x20201F00,    // U
+  0x01061820, 0x20180601,    // V
+  0x003F1008, 0x0408103F,    // W
+  0x0021120C, 0x0C122100,    // X
+  0x00010204, 0x38040201,    // Y
+  0x00213129, 0x25232100,    // Z
+  0x00003F21, 0x21000000,    // [
+  0x00010204, 0x08102000,    // \
+  0x00002121, 0x3F000000,    // ]
+  0x00000201, 0x02000000,    // ^
+  0x00202020, 0x20202000,    // _
+  0x00000001, 0x02000000,    // `
+  0x00102A2A, 0x2A1A3C00,    // a
+  0x003F1424, 0x24241800,    // b
+  0x00001824, 0x24240000,    // c
+  0x00182424, 0x24143F00,    // d
+  0x001C2A2A, 0x2A2A0C00,    // e
+  0x0000083E, 0x0A000000,    // f
+  0x0018A4A4, 0x887C0000,    // g
+  0x00003F04, 0x04380000,    // h
+  0x00000000, 0x3D000000,    // i
+  0x00808084, 0x7D000000,    // j
+  0x00003F10, 0x28240000,    // k
+  0x0000003F, 0x20000000,    // l
+  0x003C0408, 0x08043C00,    // m
+  0x00003C08, 0x04043C00,    // n
+  0x00182424, 0x24241800,    // o
+  0x00FC2824, 0x24241800,    // p
+  0x00182424, 0x2428FC00,    // q
+  0x00003C08, 0x04040800,    // r
+  0x0000242A, 0x2A120000,    // s
+  0x0000043E, 0x24040000,    // t
+  0x00001C20, 0x20103C00,    // u
+  0x000C1020, 0x20100C00,    // v
+  0x0C302010, 0x1020300C,    // w
+  0x00242810, 0x10282400,    // x
+  0x00848850, 0x20100C00,    // y
+  0x00002434, 0x2C240000,    // z
+  0x00000C3F, 0x21210000,    // {
+  0x00000000, 0x7F000000,    // |
+  0x00002121, 0x3F0C0000,    // }
+  0x00100808, 0x10100800,    // ~
+  0x003F3F3F, 0x3F3F3F00     // 
+};
+
+byte screen[1024];     // Array for storing up to 1024 columns of bitmapped characters; roughly 128 characters
+
+uint64_t longLong = 0; // 64 bit unsigned integer used for storing a individual character out of the font array
+
+int dataPin = 3;       // Serial communication pin declarations
+int latchPin = 4;
+int clockPin = 5;
+
+int levelPin = 10;     // Pin 10 is used to manipulate the brightness an individual pixel of each of the three colors
+
+byte R[8][8];          // Arrays for storing the 8x8 matrix currently being displayed (one for each color)
+byte G[8][8];
+byte B[8][8];
+
+int r = 8;            // Default brighness for each of the three colors; used when the program is set to cycle the text through the colors 
+int g = 0;
+int b = 0;
+
+byte ledpx = 0;        // Bytes used to store the X and Y of the pixel being set by the updateShiftRegisters subroutine
+byte ledpy = 0;
+
+#define scrollSpeed 60 // Speed of the scrolling text is conrolled with this constant
+
+
+String displayString = "YouTube";  // String to be displayed
+int ascii = 0;                     // Variable used to index the font array
+int arrayLength = 7;               // Bitmapped data starts being stored in the 8th element of the screen[] array to allow empty space to scroll by at the beginning of the message
+byte byteRead = 0;                 // Variable used to grab an individual column of bitmapped data from the font array
+
+
+void setup() {
+  pinMode(latchPin, OUTPUT);
+  pinMode(dataPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+
+  TCCR1B = TCCR1B & 0b11111000 | 0x01;  // Sets the PWM frequency for pin 10 to 31372.55 Hz (a higher frequency is needed because of the speed which the 8x8 matrix is parsed through)
+
+  for (int fx = 0; fx < 8; fx++) {      // Clears the display arrays and turns off all the pixels for each color
+    for (int fy = 0; fy < 8; fy++) {
+      R[fx][fy] = 0;
+      G[fx][fy] = 0;
+      B[fx][fy] = 0;
+    }
+  }
+  updateShiftRegisters();
+  
+  for (int i = 0; i < displayString.length(); i++) {   // Takes the string to be displayed (stored in displayString) and generates the screen[] array the program will shift through
+    ascii = (int(displayString[i]) - 32) * 2;          // The ASCII font table starts at ASCII 0x20, the offset is calculated and stored in the ascii variable
+    for (int k = ascii; k < ascii + 2; k++) {          // Each character is stored as two unsigned 32 bit integers, so the program reads two 32 bit integers and combines them into a 
+      long partial_ll = pgm_read_dword_near(font + k); // unsigned 64 bit integer by shifting the first 32 bits over 32 bits and adding the second 32 bits
+      if (k == ascii) {
+        longLong = partial_ll;
+        longLong = longLong << 32;
+      } else {
+        longLong = longLong + partial_ll;
+      }
+    }
+    arrayLength = arrayLength + 8;                     // Each individual bitmapped column is read by repeatedly binary "ANDing" the 64 bit integer and then shifting the 64 bit integer
+    do {                                               // 8 bits to the right until the 64 bit integer is "empty".  Since the bitmap is created right-to-left, the screen[] array is filled 
+      byteRead = longLong & 255;                       // the same way; right-to left
+      screen[arrayLength] = byteRead;
+      arrayLength--;
+      longLong = longLong >> 8;
+    } while (longLong > 0);
+    arrayLength = arrayLength + 7;
+  }
+}
+
+
+void loop()
+{
+  r = random(4);                                        // Chooses a random RGB color
+  g = random(4);
+  b = random(4);
+  if (r+g+b>120) { g = 0;}
+  for (int j = 0; j < arrayLength; j++) {                 // Strores the current 8x8 matrix with the bitmap to be displayed
+    for (int fx = 0; fx < 8; fx++) {
+      for (int fy = 7; fy > -1; fy--) {
+        R[fy][fx] = bitRead(screen[fx + j], 7 - fy) * r *64;
+        G[fy][fx] = bitRead(screen[fx + j], 7 - fy) * g *64;
+        B[fy][fx] = bitRead(screen[fx + j], 7 - fy) * b* 64;
+      }
+      updateShiftRegisters();
+    }
+  }
+//      r = r + 32;     // Alternately, this code can be uncommented to allow the text to cycle through the colors (4 bits per color)
+//    if (r > 64) {
+//      r = 0;
+//      g = g + 24;
+//    }
+//    if (g > 64) {
+//      g = 0;
+//      b = b + 24;
+//    }
+//    if (b > 64) {
+//      b = 8;
+//      r = 0;
+//      g = 0;
+//    }
+
+}
+
+
+void updateShiftRegisters()
+{
+  for (int x = 0; x < 8; x++) {               // Loops through the 8x8 array to be displayed, turning on each bit individually at the specified brighness, once for each color
+    for (int y = 0; y < 8; y++) {
+      ledpx = 1 << x;
+      ledpy = 1 << y;
+
+      if (R[x][y]) {                          // If the Red bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
+        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
+        shiftOutFast(0);
+        shiftOutFast(0);
+        shiftOutFast(ledpy);
+        analogWrite(levelPin, 255 - R[x][y]);
+        shiftOutFast(ledpx);
+        bitSet(PORTD, __latchBit);
+        delayMicroseconds(scrollSpeed);
+        analogWrite(levelPin, 255);
+      }
+      else {
+        delayMicroseconds(scrollSpeed / 2);
+      }
+      if (G[x][y]) {                          // If the Green bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
+        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
+        shiftOutFast(0);
+        analogWrite(levelPin, 255 - G[x][y]);
+        shiftOutFast(ledpy);
+        shiftOutFast(0);
+        shiftOutFast(ledpx);
+        bitSet(PORTD, __latchBit);
+        delayMicroseconds(scrollSpeed);
+        analogWrite(levelPin, 255);
+      }
+      else {
+        delayMicroseconds(scrollSpeed / 2);
+      }
+      if (B[x][y]) {                          // If the Blue bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
+        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
+        analogWrite(levelPin, 255 - B[x][y]);
+        shiftOutFast(ledpy);
+        shiftOutFast(0);
+        shiftOutFast(0);
+        shiftOutFast(ledpx);
+        bitSet(PORTD, __latchBit);
+        delayMicroseconds(scrollSpeed);
+        analogWrite(levelPin, 255);
+      }
+      else {
+        delayMicroseconds(scrollSpeed / 2);
+      }
+    }
+  }
+}
+
+
+void shiftOutFast(byte val)  // This subroutine replaces the incredibly slow "shiftOut" function.  Individual pixel data has to be sent once for each color and the shiftOut 
+{                            // function just isn't fast enough to make it scroll smoothly.  This function directly manipulates the ports on the ATmega328.
+  int u;
+  for (u = 0; u < 8; u++)  {
+    bitWrite(__shiftPORT, __dataBit, !!(val & (1 << u)));
+    bitSet(__shiftPORT, __clockBit);
+    bitClear(__shiftPORT, __clockBit);
+  }
+}
+
