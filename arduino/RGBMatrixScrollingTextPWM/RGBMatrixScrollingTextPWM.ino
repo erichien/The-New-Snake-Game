@@ -133,20 +133,65 @@ byte ledpy = 0;
 
 #define scrollSpeed 60 // Speed of the scrolling text is conrolled with this constant
 
-
-String displayString = "YouTube";  // String to be displayed
+boolean gameInPlay = false;
+String displayString = "abcdefghijklmnopqrstuvwxyz";  // String to be displayed
 int ascii = 0;                     // Variable used to index the font array
 int arrayLength = 7;               // Bitmapped data starts being stored in the 8th element of the screen[] array to allow empty space to scroll by at the beginning of the message
 byte byteRead = 0;                 // Variable used to grab an individual column of bitmapped data from the font array
 
 
+// JOYSTICK CONSTANTS
+const int X_PIN = A4;
+const int Y_PIN = A5;
+const int BUTTON_PIN = 2;
+//const int LED_PIN = 13;
+const unsigned long DEBOUNCE_DELAY = 60;  // microseconds
+const int X_ORIGIN = 520;
+const int Y_ORIGIN = 526;
+const int CHANGE_THRESHOLD = 100;  // defines sensitivity to changing x and y's direction
+
+int xDir = 0;
+int yDir = 0;
+int xValue = X_ORIGIN; // 0 to 1024
+int yValue = Y_ORIGIN;
+// byte curButtonState = HIGH;  // since pull-up resistor is used, assume switch open, initial pin value HIGH
+// byte oldButtonState = HIGH;
+byte buttonState = HIGH;
+boolean buttonPressed = false;
+// bool xDirChanged = false;
+// bool yDirChanged = false;
+// bool buttonStateChanged = false;
+unsigned long lastReadTime = 0;  // when the button last changed state
+
 void setup() {
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
-
+  pinMode(X_PIN, INPUT);
+  pinMode(Y_PIN, INPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);  // activate internal pull-up resistor on the push-button pin
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), press, LOW);
+  //pinMode(LED_PIN, OUTPUT);
+  Serial.begin(9600);
   TCCR1B = TCCR1B & 0b11111000 | 0x01;  // Sets the PWM frequency for pin 10 to 31372.55 Hz (a higher frequency is needed because of the speed which the 8x8 matrix is parsed through)
+  clearBoard();
+  if (!gameInPlay) {
+    showWelcomeMessage();
+  } else {
+    // Render matrix
+    G[0][7] = 128;
+    G[1][7] = 128;
+    R[1][0] = 128;
+    R[2][0] = 128;
+    updateShiftRegistersSlow();
+  }
+}
 
+void press() {
+  buttonPressed = true;
+}
+
+void clearBoard() {
   for (int fx = 0; fx < 8; fx++) {      // Clears the display arrays and turns off all the pixels for each color
     for (int fy = 0; fy < 8; fy++) {
       R[fx][fy] = 0;
@@ -155,8 +200,83 @@ void setup() {
     }
   }
   updateShiftRegisters();
-  
-  for (int i = 0; i < displayString.length(); i++) {   // Takes the string to be displayed (stored in displayString) and generates the screen[] array the program will shift through
+}
+
+void loop() {
+  if (micros() - lastReadTime >= DEBOUNCE_DELAY) { // debounce
+    readJoystick();
+
+    String joystickState = String(xDir) + ',' + String(yDir) + ',' + String(isPressed(buttonState));
+    Serial.println(joystickState);
+    
+    if (!gameInPlay && buttonPressed) {
+      gameInPlay = true; 
+      Serial.println("start to play");
+      clearBoard();
+      G[7][0] = 128;
+      G[7][1] = 128;
+      R[1][0] = 128;
+      R[2][0] = 128;
+      buttonPressed = false;
+    }
+    if (!gameInPlay) {
+      clearBoard();
+      r = 1;
+      b = 1;
+      g = 1;
+      if (r+g+b>120) { g = 0;}
+      for (int j = 0; j < arrayLength; j++) {                 // Strores the current 8x8 matrix with the bitmap to be displayed
+        for (int fx = 0; fx < 8; fx++) {
+          for (int fy = 7; fy > 0; fy--) {
+            R[fy][fx] = bitRead(screen[fx + j], 7 - fy) * r *64;
+            G[fy][fx] = bitRead(screen[fx + j], 7 - fy) * g *64;
+            B[fy][fx] = bitRead(screen[fx + j], 7 - fy) * b* 64;
+          }
+          updateShiftRegisters();
+        }
+      }
+    }else {
+      updateShiftRegistersSlow();
+    }
+  }
+}
+
+void readJoystick() {
+  xValue = analogRead(X_PIN);
+  yValue = analogRead(Y_PIN);
+  // curButtonState = digitalRead(BUTTON_PIN);
+  buttonState = digitalRead(BUTTON_PIN);
+  lastReadTime = micros();
+
+  // curDir is the signed distance to the origin if its abs(distance) >= threshold, else 0
+  if (abs(xValue - X_ORIGIN) >= CHANGE_THRESHOLD) {
+    // curXDir = xValue - X_ORIGIN;
+    xDir = xValue - X_ORIGIN;
+  } else {
+    // curXDir = 0;
+    xDir = 0;
+  }
+  if (abs(yValue - Y_ORIGIN) >= CHANGE_THRESHOLD) {
+    // curYDir = yValue - Y_ORIGIN;
+    yDir = yValue - Y_ORIGIN;
+  } else {
+    // curYDir = 0;
+    yDir = 0;
+  }
+}
+
+bool isPressed(byte buttonState) {
+  // buttonState (internal pull-up resistor): HIGH -> button not pressed
+  // buttonState (internal pull-up resistor): LOW  -> button pressed
+  if (buttonState == HIGH) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+void showWelcomeMessage(){
+   for (int i = 0; i < displayString.length(); i++) {   // Takes the string to be displayed (stored in displayString) and generates the screen[] array the program will shift through
     ascii = (int(displayString[i]) - 32) * 2;          // The ASCII font table starts at ASCII 0x20, the offset is calculated and stored in the ascii variable
     for (int k = ascii; k < ascii + 2; k++) {          // Each character is stored as two unsigned 32 bit integers, so the program reads two 32 bit integers and combines them into a 
       long partial_ll = pgm_read_dword_near(font + k); // unsigned 64 bit integer by shifting the first 32 bits over 32 bits and adding the second 32 bits
@@ -168,8 +288,8 @@ void setup() {
       }
     }
     arrayLength = arrayLength + 8;                     // Each individual bitmapped column is read by repeatedly binary "ANDing" the 64 bit integer and then shifting the 64 bit integer
-    do {                                               // 8 bits to the right until the 64 bit integer is "empty".  Since the bitmap is created right-to-left, the screen[] array is filled 
-      byteRead = longLong & 255;                       // the same way; right-to left
+    do {   // 8 bits to the right until the 64 bit integer is "empty".  Since the bitmap is created right-to-left, the screen[] array is filled the same way; right-to left
+      byteRead = longLong & 255;                      
       screen[arrayLength] = byteRead;
       arrayLength--;
       longLong = longLong >> 8;
@@ -178,43 +298,7 @@ void setup() {
   }
 }
 
-
-void loop()
-{
-  r = random(4);                                        // Chooses a random RGB color
-  g = random(4);
-  b = random(4);
-  if (r+g+b>120) { g = 0;}
-  for (int j = 0; j < arrayLength; j++) {                 // Strores the current 8x8 matrix with the bitmap to be displayed
-    for (int fx = 0; fx < 8; fx++) {
-      for (int fy = 7; fy > -1; fy--) {
-        R[fy][fx] = bitRead(screen[fx + j], 7 - fy) * r *64;
-        G[fy][fx] = bitRead(screen[fx + j], 7 - fy) * g *64;
-        B[fy][fx] = bitRead(screen[fx + j], 7 - fy) * b* 64;
-      }
-      updateShiftRegisters();
-    }
-  }
-//      r = r + 32;     // Alternately, this code can be uncommented to allow the text to cycle through the colors (4 bits per color)
-//    if (r > 64) {
-//      r = 0;
-//      g = g + 24;
-//    }
-//    if (g > 64) {
-//      g = 0;
-//      b = b + 24;
-//    }
-//    if (b > 64) {
-//      b = 8;
-//      r = 0;
-//      g = 0;
-//    }
-
-}
-
-
-void updateShiftRegisters()
-{
+void updateShiftRegistersSlow() {
   for (int x = 0; x < 8; x++) {               // Loops through the 8x8 array to be displayed, turning on each bit individually at the specified brighness, once for each color
     for (int y = 0; y < 8; y++) {
       ledpx = 1 << x;
@@ -237,8 +321,67 @@ void updateShiftRegisters()
       if (G[x][y]) {                          // If the Green bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
         bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
         shiftOutFast(0);
-        analogWrite(levelPin, 255 - G[x][y]);
+        
         shiftOutFast(ledpy);
+        analogWrite(levelPin, 255 - G[x][y]);
+        shiftOutFast(0);
+        shiftOutFast(ledpx);
+        bitSet(PORTD, __latchBit);
+        delayMicroseconds(scrollSpeed);
+        analogWrite(levelPin, 255);
+      }
+      else {
+        delayMicroseconds(scrollSpeed / 2);
+      }
+      if (B[x][y]) {                          // If the Blue bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
+        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
+        analogWrite(levelPin, 255 - B[x][y]);
+        shiftOutFast(ledpy);
+        shiftOutFast(0);
+        shiftOutFast(0);
+        shiftOutFast(ledpx);
+        bitSet(PORTD, __latchBit);
+        delayMicroseconds(scrollSpeed);
+        analogWrite(levelPin, 255);
+      }
+      else {
+        delayMicroseconds(scrollSpeed / 2);
+      }
+    }
+  }
+}
+void updateShiftRegisters()
+{
+  for (int x = 0; x < 8; x++) {               // Loops through the 8x8 array to be displayed, turning on each bit individually at the specified brighness, once for each color
+    if (buttonPressed) {
+        break;                                                
+      }
+    for (int y = 0; y < 8; y++) {
+      ledpx = 1 << x;
+      ledpy = 1 << y;
+      if (buttonPressed) {
+        break;                                                
+      }
+      if (R[x][y]) {                          // If the Red bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
+        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
+        shiftOutFast(0);
+        shiftOutFast(0);
+        shiftOutFast(ledpy);
+        analogWrite(levelPin, 255 - R[x][y]);
+        shiftOutFast(ledpx);
+        bitSet(PORTD, __latchBit);
+        delayMicroseconds(scrollSpeed);
+        analogWrite(levelPin, 255);
+      }
+      else {
+        delayMicroseconds(scrollSpeed / 2);
+      }
+      if (G[x][y]) {                          // If the Green bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
+        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
+        shiftOutFast(0);
+        
+        shiftOutFast(ledpy);
+        analogWrite(levelPin, 255 - G[x][y]);
         shiftOutFast(0);
         shiftOutFast(ledpx);
         bitSet(PORTD, __latchBit);
