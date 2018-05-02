@@ -15,7 +15,7 @@
   "homepage": "https://github.com/virtuositeit/The-New-Snake-Game",
   "dependencies": {
     "express": "^4.16.3",
-    "socket.io": "^2.0.4",
-    "serialport": "^6.1.1"
+    "serialport": "^6.1.1",
+    "socket.io": "^2.1.0"
   }
 }
