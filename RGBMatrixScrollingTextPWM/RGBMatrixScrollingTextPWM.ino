@@ -162,7 +162,10 @@ volatile boolean buttonPressed = false;
 // bool yDirChanged = false;
 // bool buttonStateChanged = false;
 unsigned long lastReadTime = 0;  // when the button last changed state
-
+String command; // command from the Pi server
+char character; 
+int foodX;
+int foodY;
 
 void press() {
   buttonPressed = true;
@@ -289,6 +292,22 @@ String convertToDirection() {
   }
 }
 
+//void convertJsonString(String command) {
+//  // "matrix: [[],[],[],[],[],[],[],[]]; foodPosition: (x, y)"
+//  char json[] = "{\"matrix\":\"[[],[],[],[],[],[],[],[]]\",\"foodPosition\":[3,4]}";
+//
+//  StaticJsonBuffer<200> jsonBuffer;
+//  
+//  JsonObject& root = jsonBuffer.parseObject(json);
+//  
+//  const char* matrix = root["matrix"];
+//  foodX          = root["foodPosition"][0];
+//  foodY    = root["foodPosition"][1];
+//  Serial.println(matrix);
+//  Serial.println(foodX);
+//  Serial.println(foodY);
+//
+//}
 bool isPressed(byte buttonState) {
   // buttonState (internal pull-up resistor): HIGH -> button not pressed
   // buttonState (internal pull-up resistor): LOW  -> button pressed
@@ -409,7 +428,20 @@ void loop() {
     //String joystickState = String(xDir) + ',' + String(yDir) + ',' + String(isPressed(buttonState));
     String direction = convertToDirection();
     if (direction != "") Serial.println(direction);
+    while (Serial.available()){
+      character = Serial.read();
+      command.concat(character);
+    }
+    Serial.println(command);
+    if (command == "matrix") {
+        clearBoard();
+        G[5][5] = 128;
+        G[5][4] = 128;
+        //convertJsonString(command);
+        updateShiftRegisters();
+    }
     
+   
     if (!gameInPlay && buttonPressed) {
       gameInPlay = true; 
       Serial.println("press");
