@@ -275,6 +275,20 @@ void readJoystick() {
   }
 }
 
+String convertToDirection() {
+  if (yDir >= xDir && yDir > -xDir) {
+    return "up";
+  }else if (yDir < xDir && yDir >= -xDir) {
+    return "right";
+  }else if (yDir <= xDir && yDir < -xDir) {
+    return "down";
+  }else if (yDir > xDir && yDir <= -xDir){
+    return "left";
+  }else {
+    return "";
+  }
+}
+
 bool isPressed(byte buttonState) {
   // buttonState (internal pull-up resistor): HIGH -> button not pressed
   // buttonState (internal pull-up resistor): LOW  -> button pressed
@@ -392,12 +406,13 @@ void loop() {
   if (micros() - lastReadTime >= DEBOUNCE_DELAY) { // debounce
     readJoystick();
 
-    String joystickState = String(xDir) + ',' + String(yDir) + ',' + String(isPressed(buttonState));
-    Serial.println(joystickState);
+    //String joystickState = String(xDir) + ',' + String(yDir) + ',' + String(isPressed(buttonState));
+    String direction = convertToDirection();
+    if (direction != "") Serial.println(direction);
     
     if (!gameInPlay && buttonPressed) {
       gameInPlay = true; 
-      Serial.println("start to play");
+      Serial.println("press");
       clearBoard();
       G[7][0] = 128;
       G[7][1] = 128;
