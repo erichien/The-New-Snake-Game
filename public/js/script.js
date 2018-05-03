@@ -41,7 +41,7 @@ let _eraseSnake = (grid, snakeBody) => {
 
     // game states
     let gameInPlay = false;
-    let snakeBody = [[3, 3], [3, 4], [3, 5]];
+    let snakeBody = null;
     let snakeBodySet = new Set();
     let score = 0;
     let foodPos = null;
@@ -125,6 +125,7 @@ let _eraseSnake = (grid, snakeBody) => {
 
     socket.on('gameUpdate', state => {
       console.log('gameUpdate state', state);
+
       _eraseSnake(grid, snakeBody);
       gameInPlay = state.gameInPlay;
       snakeBody = state.snakeBody;

@@ -28,7 +28,7 @@ let gameInPlay = false;
 let score = 0;
 let foodPos = [0, 0]; // when food is eaten => null
 let dir = 'right'; // random?
-let snakeBody = [[3, 3], [3, 4], [3, 5]];
+let snakeBody = [[3, 3], [3, 4], [3, 5], [3, 6]];
 let snakeBodySet = new Set();
 let gameStatus = {};
 
@@ -118,21 +118,6 @@ io.on('connect', function(socket) {
   });
   _updateGameStatus();
   io.emit('gameUpdate', gameStatus);
-  /*
-  // connect to client
-  socket.emit('syn', synAck => {
-    if (synAck) {
-      io.emit('ack');
-      clientReady = true;
-      console.log('clientReady:', true);
-      // check arduinoReady
-      if (arduinoReady) {
-        gameInPlay = true;
-        console.log('gameInPlay:', true);
-      }
-    }
-  });
-*/
 
   // if you get the 'disconnect' message, say the user disconnected
   socket.on('disconnect', function() {
