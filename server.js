@@ -19,6 +19,7 @@ app.get('/', function(req, res) {
   res.sendFile('./public/index.html');
 });
 
+
 //----------------------------------------------------------------------------//
 
 //------------------------------- GAME STATES --------------------------------//
@@ -31,6 +32,7 @@ let dir = 'right'; // random?
 let snakeBody = [[3, 3], [3, 4], [3, 5]];
 let snakeBodySet = new Set();
 let gameStatus = {};
+
 
 let _updateGameStatus = () => {
   gameStatus = {
@@ -68,7 +70,6 @@ parser.on('data', data => {
     io.emit('');
   } else if (data == 'down') {
     dir = 'down';
-    io.emit('new-pos', transmitData);
   } else if (data == 'left') {
     dir = 'left';
   } else if (data == 'right') {
@@ -80,7 +81,14 @@ parser.on('data', data => {
       if (clientReady) {
         gameInPlay = true;
         console.log('gameInPlay:', true);
-        // TODO: send initial matrix to arduino and client
+        //send initial matrix to arduino and client
+        var stringTosend = "matrix:" + snakeBody.toString();
+        serial.write(stringTosend, function(err) {
+          if (err) {
+            return console.log('Error on write: ', err.message);
+          }
+          console.log('message written');
+        });
       }
     }
   }
@@ -99,12 +107,7 @@ io.on('connect', function(socket) {
 
   clientReady = true;
   console.log('connected to client');
-  // serial.write('matrix', function(err) {
-  //   if (err) {
-  //     return console.log('Error on write: ', err.message);
-  //   }
-  //   console.log('message written');
-  // });
+
 
   if (arduinoReady) {
     gameInPlay = true;
@@ -125,6 +128,14 @@ io.on('connect', function(socket) {
     io.emit('gameUpdate', gameStatus);
     console.log('food received:', foodPos);
     // take care of arduino
+    var stringTosend = "matrix:" + snakeBody.toString()+";foodPosition:"+foodPos.toString();
+    console.log(stringTosend);
+    serial.write(stringTosend, function(err) {
+      if (err) {
+        return console.log('Error on write: ', err.message);
+      }
+      console.log('message written');
+    });
   });
   _updateGameStatus();
   io.emit('gameUpdate', gameStatus);
@@ -149,3 +160,4 @@ io.on('connect', function(socket) {
     console.log('disconnected from client');
   });
 });
+
