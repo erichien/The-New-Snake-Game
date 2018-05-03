@@ -33,7 +33,7 @@ let snakeBody = [];
 //---------------------- SERIAL COMMUNICATION --------------------------------//
 // start the serial port connection and read on newlines
 
-/*
+
 const serial = new serialPort('/dev/ttyUSB0', {
   baudRate: 115200
 });
@@ -47,17 +47,18 @@ const parser = new readLine({
 // Read data that is available on the serial port and send it to the websocket
 serial.pipe(parser);
 parser.on('data', function(data) {
+  console.log(data);
   // on data from the arduino
   if (data == 'rst') {
     // if its the 'rst' string call reset
-    io.emit('reset');
+    //io.emit('reset');
   } else {
     // any other data we try to forward by spliting it
-    var transmitData = [data.split(',')[0], data.split(',')[1]];
-    io.emit('new-pos', transmitData);
+    // var transmitData = [data.split(',')[0], data.split(',')[1]];
+    // io.emit('new-pos', transmitData);
   }
 });
-*/
+
 //----------------------------------------------------------------------------//
 
 io.on('foodPlaced', () => {
@@ -68,6 +69,12 @@ io.on('foodPlaced', () => {
 
 io.on('connect', function(socket) {
   console.log('socket connected to client');
+  serial.write('matrix', function(err) {
+      if (err) {
+        return console.log('Error on write: ', err.message);
+      }
+      console.log('message written');
+    });
 
   // call reset to make sure the website is clean
   socket.emit('reset');
@@ -82,7 +89,7 @@ io.on('connect', function(socket) {
   });
 
   // if you get the 'disconnect' message, say the user disconnected
-  socket.on('disconnect', function() {
+  io.on('disconnect', function() {
     // disconnect arduino
     console.log('socket disconnected from client');
   });

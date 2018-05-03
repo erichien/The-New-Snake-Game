@@ -292,22 +292,23 @@ String convertToDirection() {
   }
 }
 
-//void convertJsonString(String command) {
-//  // "matrix: [[],[],[],[],[],[],[],[]]; foodPosition: (x, y)"
-//  char json[] = "{\"matrix\":\"[[],[],[],[],[],[],[],[]]\",\"foodPosition\":[3,4]}";
-//
-//  StaticJsonBuffer<200> jsonBuffer;
-//  
-//  JsonObject& root = jsonBuffer.parseObject(json);
-//  
-//  const char* matrix = root["matrix"];
-//  foodX          = root["foodPosition"][0];
-//  foodY    = root["foodPosition"][1];
-//  Serial.println(matrix);
-//  Serial.println(foodX);
-//  Serial.println(foodY);
-//
-//}
+void convertJsonString(String command) {
+  String s = "matrix:[[],[],[],[],[],[],[],[]];foodPosition:[3,4]";
+  int splitPosition = s.indexOf(";");
+  int matrixStartIndex = s.indexOf(":");
+  int foodStartIndex = s.lastIndexOf(":");
+  String matrixString = s.substring(matrixStartIndex+1, splitPosition);
+  
+  char x = s.charAt(foodStartIndex+2);
+  char y = s.charAt(s.length()-2);
+
+  foodX = x - '0';
+  foodY = y - '0';
+  Serial.println(matrixString);
+  Serial.println(foodX);
+  Serial.println(foodY);
+
+}
 bool isPressed(byte buttonState) {
   // buttonState (internal pull-up resistor): HIGH -> button not pressed
   // buttonState (internal pull-up resistor): LOW  -> button pressed
@@ -433,11 +434,11 @@ void loop() {
       command.concat(character);
     }
     Serial.println(command);
+    // y = x, x = 7-y
     if (command == "matrix") {
         clearBoard();
-        G[5][5] = 128;
-        G[5][4] = 128;
-        //convertJsonString(command);
+        convertJsonString(command);
+        R[7-foodY][foodX] = 128;
         updateShiftRegisters();
     }
     
