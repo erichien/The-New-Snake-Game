@@ -1,3 +1,11 @@
+let _stringToNums = foodPosString => {
+  return foodPosString.split(',').map(x => parseInt(x));
+};
+
+let _numsToString = pos => {
+  return `${pos[0]},${pos[1]}`;
+};
+
 let _assignCellColor = (cell, i, j) => {
   if ((i + j) % 2 == 0) {
     cell.style.backgroundColor = '#B7D65C';
@@ -8,67 +16,125 @@ let _assignCellColor = (cell, i, j) => {
   }
 };
 
-let createBoard = grid => {
-  for (i of Array(8).keys()) {
-    for (j of Array(8).keys()) {
-      let cell = document.createElement('DIV');
-      let button = document.createElement('BUTTON');
+let _renderSnake = (grid, snakeBody) => {
+  for (let pos of snakeBody) {
+    let cell = grid.querySelector(
+      `div[data-cell-pos=${'"' + _numsToString(pos) + '"'}]`
+    );
+    cell.querySelector('.button').style.display = 'flex';
+  }
+};
 
-      button.setAttribute('class', 'button');
-      button.setAttribute('data-button-pos', `${i},${j}`);
-      cell.setAttribute('class', 'cell');
-      cell.setAttribute('data-cell-pos', `${i},${j}`);
-      _assignCellColor(cell, i, j);
-
-      cell.addEventListener('mouseenter', () => {
-        event.currentTarget.querySelector('.button').style.display = 'flex';
-      });
-      cell.addEventListener('mouseleave', () => {
-        event.currentTarget.querySelector('.button').style.display = 'none';
-      });
-      cell.addEventListener('click', () => {
-        event.currentTarget.querySelector('.button').style.display = 'flex';
-      });
-
-      cell.appendChild(button);
-      grid.appendChild(cell);
-    }
+let _eraseSnake = (grid, snakeBody) => {
+  for (let pos of snakeBody) {
+    let cell = grid.querySelector(
+      `div[data-cell-pos=${'"' + _numsToString(pos) + '"'}]`
+    );
+    cell.querySelector('.button').style.display = 'none';
   }
 };
 
 (() => {
   document.addEventListener('DOMContentLoaded', () => {
-    let socket = io(); // websocket to the server
+    let socket = io(); // websocket to server
     let grid = document.querySelector('.grid');
-
-    createBoard(grid);
 
     // game states
     let gameInPlay = false;
+    let snakeBody = [[3, 3], [3, 4], [3, 5]];
+    let snakeBodySet = new Set();
+    let score = 0;
+    let foodPos = null;
 
-    // connect to server
-    socket.on('syn', sendSynAck => {
-      sendSynAck(true);
-      socket.on('ack', () => {
-        gameInPlay = true;
-        console.log('gameInPlay:', true);
-        // take care of markup
-      });
+    let _mouseenterHandler = event => {
+      event.currentTarget.querySelector('.button').style.display = 'flex';
+    };
+
+    let _mouseleaveHandler = event => {
+      event.currentTarget.querySelector('.button').style.display = 'none';
+    };
+
+    let _clickHandler = event => {
+      _placeFood(event);
+    };
+
+    // how to pass socket and foodPos here?
+    let _placeFood = event => {
+      if (!foodPos) {
+        foodPos = _stringToNums(event.currentTarget.dataset.cellPos);
+
+        event.currentTarget.removeEventListener(
+          'mouseenter',
+          _mouseenterHandler
+        );
+        event.currentTarget.removeEventListener(
+          'mouseleave',
+          _mouseleaveHandler
+        );
+        event.currentTarget.removeEventListener('click', _clickHandler);
+      }
+
+      event.currentTarget.querySelector('.button').style.display = 'flex';
+      socket.emit('foodPlaced', foodPos);
+      console.log('food placed at', foodPos);
+    };
+
+    // _removeFood when food is eaten (state.foodPos = null)
+    let _removeFood = stateFoodPos => {
+      // take care of markup at foodPos
+      let cell = grid.querySelector(
+        `div[data-cell-pos=${'"' + _numsToString(foodPos) + '"'}]`
+      );
+      cell.addEventListener('mouseenter', _mouseenterHandler);
+      cell.addEventListener('mouseleave', _mouseleaveHandler);
+      cell.addEventListener('click', _clickHandler);
+
+      cell.querySelector('.button').style.display = 'none';
+      foodPos = null;
+      console.log('food removed');
+    };
+
+    let _createBoard = (grid, socket, foodPos) => {
+      for (i of Array(8).keys()) {
+        for (j of Array(8).keys()) {
+          let cell = document.createElement('DIV');
+          let button = document.createElement('BUTTON');
+
+          button.setAttribute('class', 'button');
+          button.setAttribute('data-button-pos', `${i},${j}`);
+          cell.setAttribute('class', 'cell');
+          cell.setAttribute('data-cell-pos', `${i},${j}`);
+          _assignCellColor(cell, i, j);
+
+          cell.addEventListener('mouseenter', _mouseenterHandler);
+          cell.addEventListener('mouseleave', _mouseleaveHandler);
+          cell.addEventListener('click', _clickHandler);
+
+          cell.appendChild(button);
+          grid.appendChild(cell);
+        }
+      }
+    };
+
+    _createBoard(grid, socket, foodPos);
+
+    socket.on('connect', () => {
+      console.log('connected to server');
+      // take care of markup
     });
 
-    socket.on('gameStatusUpdate');
+    socket.on('gameUpdate', state => {
+      console.log('gameUpdate state', state);
+      _eraseSnake(grid, snakeBody);
+      gameInPlay = state.gameInPlay;
+      snakeBody = state.snakeBody;
+      snakeBodySet = state.snakeBodySet;
+      score = state.score;
+      _renderSnake(grid, snakeBody);
 
-    // let cells = document.querySelectorAll('[data-pos]');
-    //
-    // for (let cell of cells) {
-    //   let pos = cell.dataset.pos.split(',').map(Number);
-    //   let sum = pos.reduce((i, j) => i + j);
-    //
-    //   if (sum % 2 == 0) {
-    //     cell.style.backgroundColor = '#B6D856';
-    //   } else {
-    //     cell.style.backgroundColor = '#A1CB4A';
-    //   }
-    // }
+      if (!state.foodPos) {
+        _removeFood(foodPos);
+      }
+    });
   });
 })();
