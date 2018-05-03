@@ -41,7 +41,7 @@ let arduinoReady = false;
 // game state variables
 let gameInPlay = false;
 let score = 0;
-let foodPos = [0, 0]; // when food is eaten => null
+let foodPos = null; // when food is eaten => null
 let dir = 'R'; // 'U', 'D', 'L', 'R', randomize on start?
 let snakeBody = [[3, 0], [3, 1], [3, 2]];
 let snakeBodySet = new Set();
@@ -77,8 +77,8 @@ let _calculateNextState = () => {
   curHead = snakeBody[snakeBody.length - 1];
   [curI, curJ] = curHead;
   [dI, dJ] = dirs[dir];
-  newHead = [curI + dI, curJ + dJ];
-  [i, j] = newHead;
+  [i, j] = [curI + dI, curJ + dJ];
+  newHead = [i, j];
 
   // check if game over
   if (
@@ -91,10 +91,11 @@ let _calculateNextState = () => {
     // game over
     gameInPlay = false;
     console.log('game over');
-    return -1; //?
+    clearInterval(_startGame);
+    return;
   }
 
-  if (foodPos && [i, j] == foodPos[0]) {
+  if (foodPos && (foodPos[0] == newHead[0] && foodPos[1] == newHead[1])) {
     score += 1;
     foodPos = null;
   } else {
@@ -108,11 +109,14 @@ let _calculateNextState = () => {
 
 let _gameLoop = () => {
   _calculateNextState();
-  console.log(snakeBody);
+  console.log('snake at', snakeBody);
   _updateClient(); // update client
-  // _updateArduino(); // update arduino
+  _updateArduino(); // update arduino
   console.log('Cant stop me now!');
 };
+
+// start game, 1000 millisecs/frame
+let _startGame = setInterval(_gameLoop, 1000);
 
 //----------------------------------------------------------------------------//
 
@@ -188,17 +192,13 @@ let _updateArduino() => {
 io.on('connect', function(socket) {
   // call reset to make sure the website is clean
   socket.emit('reset');
-
   clientReady = true;
   console.log('connected to client');
 
-  if (clientReady) {
-    ////////////// change back to arduinoReady
+  if (arduinoReady) {
     gameInPlay = true;
     console.log('gameInPlay:', true);
-
-    // start game, 500 millisecs/frame
-    setInterval(_gameLoop, 1000);
+    _startGame;
   }
 
   // can only listen for foodPlaced event via socket here
@@ -206,16 +206,9 @@ io.on('connect', function(socket) {
   // => can't use io.on('foodPlaced', ...) outside io.on('connect', ...)
   // but can do io.emit('event', ...) outside io.on('connect', ...)
   socket.on('foodPlaced', pos => {
-    console.log(pos);
-    console.log(foodPos);
     foodPos = pos;
-    console.log(foodPos);
-    // foodPos = null;
-    _updateClient();
-    io.emit('gameUpdate', gameStatus);
     console.log('food received:', foodPos);
   });
-  // take care of arduino
 
   // if you get the 'disconnect' message, say the user disconnected
   io.on('disconnect', function() {
@@ -223,57 +216,3 @@ io.on('connect', function(socket) {
     console.log('disconnected from client');
   });
 });
-
-/*
-class SnakeGame(object):
-
-    def __init__(self, width, height, food):
-        """
-        Initialize your data structure here.
-        @param width - screen width
-        @param height - screen height
-        @param food - A list of food positions
-        E.g food = [[1,1], [1,0]] means the first food is positioned at [1,1], the second is at [1,0].
-        :type width: int
-        :type height: int
-        :type food: List[List[int]]
-        """
-        self.snake_pos = set([(0, 0)])
-
-    def move(self, direction):
-        """
-        Moves the snake.
-        @param direction - 'U' = Up, 'L' = Left, 'R' = Right, 'D' = Down
-        @return The game's score after the move. Return -1 if game over.
-        Game over when snake crosses the screen boundary or bites its body.
-        :type direction: str
-        :rtype: int
-        """
-
-        # be careful!! the next pos if head could be where tail is now
-
-        print direction
-        cur_i, cur_j = cur_head = self.snake[-1]
-        d_i, d_j = self.dirs[direction]
-        new_head = cur_i + d_i, cur_j + d_j
-        i, j = new_head
-
-        if i < 0 or i == self.height or j < 0 or j == self.width or (new_head in self.snake_pos and new_head != self.snake[0]):
-            return -1
-
-        if self.food and [i, j] == self.food[0]:
-            self.food.popleft()
-        else:
-            tail = self.snake.popleft()
-            self.snake_pos.remove(tail)
-
-        self.snake.append(new_head)
-        self.snake_pos.add(new_head)
-
-        return len(self.snake) - 1
-
-
-# Your SnakeGame object will be instantiated and called as such:
-# obj = SnakeGame(width, height, food)
-# param_1 = obj.move(direction)
-*/

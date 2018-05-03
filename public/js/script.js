@@ -92,13 +92,15 @@
     };
 
     let _renderSnake = (grid, snakeBody) => {
-      for (let pos of snakeBody) {
-        let cell = grid.querySelector(
-          `div[data-cell-pos=${'"' + _numsToString(pos) + '"'}]`
-        );
+      if (snakeBody) {
+        for (let pos of snakeBody) {
+          let cell = grid.querySelector(
+            `div[data-cell-pos=${'"' + _numsToString(pos) + '"'}]`
+          );
 
-        cell.style.backgroundColor = '#eeb82b';
-        _removeEventListeners(cell);
+          cell.style.backgroundColor = '#eeb82b';
+          _removeEventListeners(cell);
+        }
       }
     };
 
@@ -129,7 +131,7 @@
       score = state.score;
       _renderSnake(grid, snakeBody);
 
-      if (!state.foodPos) {
+      if (!state.foodPos && foodPos) {
         _removeFood(foodPos);
       }
     });
