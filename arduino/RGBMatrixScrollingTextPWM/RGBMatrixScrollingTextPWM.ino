@@ -375,6 +375,7 @@ void setup() {
   attachInterrupt(0, press, LOW);
   //pinMode(LED_PIN, OUTPUT);
   Serial.begin(115200);
+  Serial.println("set up");
   TCCR1B = TCCR1B & 0b11111000 | 0x01;  // Sets the PWM frequency for pin 10 to 31372.55 Hz (a higher frequency is needed because of the speed which the 8x8 matrix is parsed through)
   clearBoard();
   if (!gameInPlay) {

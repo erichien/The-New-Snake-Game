@@ -47,7 +47,7 @@ let _updateGameStatus = () => {
 
 //---------------------- SERIAL COMMUNICATION --------------------------------//
 // start the serial port connection and read on newlines
-/*
+
 const serial = new serialPort('/dev/ttyUSB0', {
   baudRate: 115200
 });
@@ -66,7 +66,6 @@ parser.on('data', data => {
     io.emit('');
   } else if (data == 'down') {
     dir = 'down';
-    io.emit('new-pos', transmitData);
   } else if (data == 'left') {
     dir = 'left';
   } else if (data == 'right') {
@@ -78,11 +77,19 @@ parser.on('data', data => {
       if (clientReady) {
         gameInPlay = true;
         console.log('gameInPlay:', true);
+        //send initial matrix to arduino and client
+        var stringTosend = 'matrix:' + snakeBody.toString();
+        serial.write(stringTosend, function(err) {
+          if (err) {
+            return console.log('Error on write: ', err.message);
+          }
+          console.log('message written');
+        });
       }
     }
   }
 });
-*/
+
 //----------------------------------------------------------------------------//
 
 // io.emit('gameUpdate', a);
@@ -115,12 +122,21 @@ io.on('connect', function(socket) {
     io.emit('gameUpdate', gameStatus);
     console.log('food received:', foodPos);
     // take care of arduino
+    var stringTosend =
+      'matrix:' + snakeBody.toString() + ';foodPosition:' + foodPos.toString();
+    console.log(stringTosend);
+    serial.write(stringTosend, function(err) {
+      if (err) {
+        return console.log('Error on write: ', err.message);
+      }
+      console.log('message written');
+    });
   });
   _updateGameStatus();
   io.emit('gameUpdate', gameStatus);
 
   // if you get the 'disconnect' message, say the user disconnected
-  socket.on('disconnect', function() {
+  io.on('disconnect', function() {
     // disconnect arduino
     console.log('disconnected from client');
   });

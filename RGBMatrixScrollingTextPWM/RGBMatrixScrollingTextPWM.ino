@@ -162,7 +162,10 @@ volatile boolean buttonPressed = false;
 // bool yDirChanged = false;
 // bool buttonStateChanged = false;
 unsigned long lastReadTime = 0;  // when the button last changed state
-
+String command; // command from the Pi server
+char character; 
+int foodX;
+int foodY;
 
 void press() {
   buttonPressed = true;
@@ -289,6 +292,30 @@ String convertToDirection() {
   }
 }
 
+void processCommand(String s) {
+//  String s = "matrix:3,3,3,4,3,5;foodPosition:3,1";
+  int splitPosition = s.indexOf(";");
+  int matrixStartIndex = s.indexOf(":");
+  String matrixString = s.substring(matrixStartIndex+1, splitPosition);
+  // x = 7 - x; y = y
+  for (int i=0; i < matrixString.length(); i+=4){
+    int posX = matrixString.charAt(i) - '0';
+    int posY = matrixString.charAt(i+2) - '0';
+    G[7-posX][posY] = 128;
+  }
+
+  if (s.indexOf("foodPosition") > 0) {
+    char x = s.charAt(s.length()-3);
+    char y = s.charAt(s.length()-1);
+    foodX = x - '0';
+    foodY = y - '0';
+    R[7-foodX][foodY] = 128;
+  }
+  
+  
+  updateShiftRegisters();
+
+}
 bool isPressed(byte buttonState) {
   // buttonState (internal pull-up resistor): HIGH -> button not pressed
   // buttonState (internal pull-up resistor): LOW  -> button pressed
@@ -409,7 +436,18 @@ void loop() {
     //String joystickState = String(xDir) + ',' + String(yDir) + ',' + String(isPressed(buttonState));
     String direction = convertToDirection();
     if (direction != "") Serial.println(direction);
-    
+    while (Serial.available()){
+      character = Serial.read();
+      command.concat(character);
+    }
+    Serial.println(command);
+    // y = x, x = 7-y
+    if (command.length() > 1){
+        clearBoard();
+        processCommand(command);
+    }
+    command = "";
+   
     if (!gameInPlay && buttonPressed) {
       gameInPlay = true; 
       Serial.println("press");
