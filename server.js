@@ -2,9 +2,19 @@ let express = require('express'); // web server application
 let app = express(); // webapp
 let http = require('http').Server(app); // connects http library to server
 let io = require('socket.io')(http); // connect websocket library to server
-// let serialPort = require('serialport'); // serial library
-// let readLine = serialPort.parsers.Readline; // read serial data as lines
+let serialPort = require('serialport'); // serial library
+let readLine = serialPort.parsers.Readline; // read serial data as lines
 let serverPort = 8000;
+
+
+// start the serial port connection and read on newlines
+
+const serial = new serialPort('/dev/ttyUSB0', {
+  baudRate: 115200
+});
+const parser = new readLine({
+  delimiter: '\r\n'
+});
 
 //---------------------- WEBAPP SERVER SETUP ---------------------------------//
 // use express to create the simple webapp
@@ -41,7 +51,7 @@ let arduinoReady = false;
 // game state variables
 let gameInPlay = false;
 let score = 0;
-let foodPos = [0, 0]; // when food is eaten => null
+let foodPos = null; // when food is eaten => null
 let dir = 'R'; // 'U', 'D', 'L', 'R', randomize on start?
 let snakeBody = [[3, 0], [3, 1], [3, 2]];
 let snakeBodySet = new Set();
@@ -76,6 +86,7 @@ let _calculateNextState = () => {
 
   curHead = snakeBody[snakeBody.length - 1];
   [curI, curJ] = curHead;
+  console.log(dir);
   [dI, dJ] = dirs[dir];
   newHead = [curI + dI, curJ + dJ];
   [i, j] = newHead;
@@ -110,22 +121,13 @@ let _gameLoop = () => {
   _calculateNextState();
   console.log(snakeBody);
   _updateClient(); // update client
-  // _updateArduino(); // update arduino
+  _updateArduino(); // update arduino
   console.log('Cant stop me now!');
 };
 
 //----------------------------------------------------------------------------//
 
 //---------------------- SERIAL COMMUNICATION --------------------------------//
-// start the serial port connection and read on newlines
-/*
-const serial = new serialPort('/dev/ttyUSB0', {
-  baudRate: 115200
-});
-const parser = new readLine({
-  delimiter: '\r\n'
-});
-
 // TODO: calculate whether or not to change snake's moving direction: e.g. can't move opposite dir
 
 // Read data that is available on the serial port and send it to the websocket
@@ -134,13 +136,13 @@ serial.pipe(parser);
 parser.on('data', data => {
   // on data from the arduino
   if (data == 'up') {
-    dir = 'up';
+    dir = 'U';
   } else if (data == 'down') {
-    dir = 'down';
+    dir = 'D';
   } else if (data == 'left') {
-    dir = 'left';
+    dir = 'L';
   } else if (data == 'right') {
-    dir = 'right';
+    dir = 'R';
   } else if (data == 'press') {
     if (!arduinoReady) {
       arduinoReady = true;
@@ -150,7 +152,7 @@ parser.on('data', data => {
         console.log('gameInPlay:', true);
 
         // start game, 500 millisecs/frame
-        setInterval(_gameLoop, 500);
+        setInterval(_gameLoop, 1000);
 
         //send initial matrix to arduino and client
         var stringTosend = 'matrix:' + snakeBody.toString();
@@ -165,11 +167,13 @@ parser.on('data', data => {
   }
 });
 
-let _updateArduino() => {
+let _updateArduino=() => {
 
   // send game update to arduino
-  var stringTosend =
-    'matrix:' + snakeBody.toString() + ';foodPosition:' + foodPos.toString();
+  var stringTosend = 'matrix:' + snakeBody.toString()
+  if (foodPos) {
+    stringTosend += ';foodPosition:' + foodPos.toString();
+  }
   console.log(stringTosend);
   serial.write(stringTosend, function(err) {
     if (err) {
@@ -179,7 +183,7 @@ let _updateArduino() => {
   });
 }
 
-*/
+
 
 //----------------------------------------------------------------------------//
 
@@ -192,7 +196,7 @@ io.on('connect', function(socket) {
   clientReady = true;
   console.log('connected to client');
 
-  if (clientReady) {
+  if (arduinoReady) {
     ////////////// change back to arduinoReady
     gameInPlay = true;
     console.log('gameInPlay:', true);
