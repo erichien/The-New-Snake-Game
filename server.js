@@ -131,7 +131,7 @@ let _gameLoop = () => {
   _calculateNextState();
   console.log('snake at', snakeBody);
   _updateClient(); // update client
-  // _updateArduino(); // update arduino
+  _updateArduino(); // update arduino
   console.log('Cant stop me now!');
 };
 
@@ -149,13 +149,13 @@ serial.pipe(parser);
 
 parser.on('data', data => {
   // on data from the arduino
-  if (data == 'up') {
+  if (data == 'up' && dir != 'U' && dir != 'D') {
     dir = 'U';
-  } else if (data == 'down') {
+  } else if (data == 'down' && dir != 'D' && dir != 'U') {
     dir = 'D';
-  } else if (data == 'left') {
+  } else if (data == 'left' && dir != 'L' && dir != 'R') {
     dir = 'L';
-  } else if (data == 'right') {
+  } else if (data == 'right' && dir != 'R' && dir != 'L') {
     dir = 'R';
   } else if (data == 'press') {
     if (!arduinoReady) {
@@ -165,8 +165,9 @@ parser.on('data', data => {
         gameInPlay = true;
         console.log('gameInPlay:', true);
 
-        // start game, 500 millisecs/frame
-        _startGame = setInterval(_gameLoop, 1000);
+        _resetStates();
+
+        
 
         //send initial matrix to arduino and client
         var stringTosend = 'matrix:' + snakeBody.toString();
@@ -176,8 +177,12 @@ parser.on('data', data => {
           }
           console.log('message written');
         });
+        // start game, 500 millisecs/frame
+        _startGame = setInterval(_gameLoop, 1000);
       }
     }
+  } else {
+    // console.log(data);
   }
 });
 
@@ -187,7 +192,7 @@ let _updateArduino = () => {
   if (foodPos) {
     stringTosend += ';foodPosition:' + foodPos.toString();
   }
-  console.log(stringTosend);
+  //console.log(stringTosend);
 
   serial.write(stringTosend, function(err) {
     if (err) {
