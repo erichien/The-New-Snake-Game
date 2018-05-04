@@ -98,7 +98,7 @@
             `div[data-cell-pos=${'"' + _numsToString(pos) + '"'}]`
           );
 
-          cell.style.backgroundColor = '#eeb82b';
+          cell.style.backgroundColor = '#FCBE2C';
           _removeEventListeners(cell);
         }
       }
@@ -124,6 +124,10 @@
 
     socket.on('gameUpdate', state => {
       console.log('gameUpdate state', state);
+
+      if (!state.gameInPlay) {
+        socket.disconnect();
+      }
 
       _eraseSnake(grid, snakeBody);
       gameInPlay = state.gameInPlay;
