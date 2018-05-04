@@ -131,7 +131,7 @@ int b = 0;
 byte ledpx = 0;        // Bytes used to store the X and Y of the pixel being set by the updateShiftRegisters subroutine
 byte ledpy = 0;
 
-#define scrollSpeed 60 // Speed of the scrolling text is conrolled with this constant
+#define scrollSpeed 50 // Speed of the scrolling text is conrolled with this constant
 
 boolean gameInPlay = false;
 String displayString = "abcdefghijklmnopqrstuvwxyz";  // String to be displayed
@@ -145,7 +145,7 @@ const int X_PIN = A4;
 const int Y_PIN = A5;
 const int BUTTON_PIN = 2;
 //const int LED_PIN = 13;
-const unsigned long DEBOUNCE_DELAY = 60;  // microseconds
+const unsigned long DEBOUNCE_DELAY = 50;  // microseconds
 const int X_ORIGIN = 520;
 const int Y_ORIGIN = 526;
 const int CHANGE_THRESHOLD = 100;  // defines sensitivity to changing x and y's direction
@@ -312,7 +312,6 @@ void processCommand(String s) {
     R[7-foodX][foodY] = 128;
   }
   
-  
   updateShiftRegisters();
 
 }
@@ -416,6 +415,7 @@ void setup() {
   attachInterrupt(0, press, LOW);
   //pinMode(LED_PIN, OUTPUT);
   Serial.begin(115200);
+  Serial.setTimeout(100);
   TCCR1B = TCCR1B & 0b11111000 | 0x01;  // Sets the PWM frequency for pin 10 to 31372.55 Hz (a higher frequency is needed because of the speed which the 8x8 matrix is parsed through)
   clearBoard();
   if (!gameInPlay) {
@@ -436,9 +436,9 @@ void loop() {
     //String joystickState = String(xDir) + ',' + String(yDir) + ',' + String(isPressed(buttonState));
     String direction = convertToDirection();
     if (direction != "") Serial.println(direction);
-    while (Serial.available()){
-      character = Serial.read();
-      command.concat(character);
+    if (Serial.available()){
+      command = Serial.readString();
+      //command.concat(character);
     }
     Serial.println(command);
     // y = x, x = 7-y
