@@ -6,7 +6,6 @@ let serialPort = require('serialport'); // serial library
 let readLine = serialPort.parsers.Readline; // read serial data as lines
 let serverPort = 8000;
 
-
 // start the serial port connection and read on newlines
 
 const serial = new serialPort('/dev/ttyUSB0', {
@@ -53,8 +52,17 @@ let gameInPlay = false;
 let score = 0;
 let foodPos = null; // when food is eaten => null
 let dir = 'R'; // 'U', 'D', 'L', 'R', randomize on start?
-let snakeBody = [[3, 0], [3, 1], [3, 2]];
+let initialPos = [[3, 0], [3, 1], [3, 2]];
+let snakeBody = [];
 let snakeBodySet = new Set();
+
+let _resetStates = () => {
+  score = 0;
+  foodPos = null; // when food is eaten => null
+  dir = 'R'; // 'U', 'D', 'L', 'R', randomize on start?
+  snakeBody = initialPos.slice();
+  snakeBodySet = new Set();
+};
 
 let _updateClient = () => {
   clientGameStatus = {
@@ -102,6 +110,7 @@ let _calculateNextState = () => {
     // game over
     gameInPlay = false;
     console.log('game over');
+
     clearInterval(_startGame);
     return;
   }
@@ -122,7 +131,7 @@ let _gameLoop = () => {
   _calculateNextState();
   console.log('snake at', snakeBody);
   _updateClient(); // update client
-  _updateArduino(); // update arduino
+  // _updateArduino(); // update arduino
   console.log('Cant stop me now!');
 };
 
@@ -137,6 +146,7 @@ let _startGame;
 // Read data that is available on the serial port and send it to the websocket
 
 serial.pipe(parser);
+
 parser.on('data', data => {
   // on data from the arduino
   if (data == 'up') {
@@ -171,23 +181,21 @@ parser.on('data', data => {
   }
 });
 
-let _updateArduino=() => {
-
+let _updateArduino = () => {
   // send game update to arduino
-  var stringTosend = 'matrix:' + snakeBody.toString()
+  var stringTosend = 'matrix:' + snakeBody.toString();
   if (foodPos) {
     stringTosend += ';foodPosition:' + foodPos.toString();
   }
   console.log(stringTosend);
+
   serial.write(stringTosend, function(err) {
     if (err) {
       return console.log('Error on write: ', err.message);
     }
     console.log('message written');
   });
-}
-
-
+};
 
 //----------------------------------------------------------------------------//
 
@@ -200,6 +208,7 @@ io.on('connect', function(socket) {
   console.log('connected to client');
 
   if (arduinoReady) {
+    _resetStates();
     gameInPlay = true;
     console.log('gameInPlay:', true);
     _startGame = setInterval(_gameLoop, 1000);
@@ -220,4 +229,3 @@ io.on('connect', function(socket) {
     console.log('disconnected from client');
   });
 });
-
