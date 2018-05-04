@@ -44,9 +44,9 @@
     let _placeFood = event => {
       if (!foodPos) {
         let cell = event.currentTarget;
-        foodPos = _stringToNums(cell.dataset.cellPos);
         _removeEventListeners(cell);
         cell.querySelector('.button').style.display = 'flex';
+        foodPos = _stringToNums(cell.dataset.cellPos);
         socket.emit('foodPlaced', foodPos);
         console.log('food placed at', foodPos);
       }

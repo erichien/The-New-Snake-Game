@@ -56,11 +56,26 @@ let initialPos = [[3, 0], [3, 1], [3, 2]];
 let snakeBody = [];
 let snakeBodySet = new Set();
 
+let _startGame;
+
+let _gameLoop = () => {
+  _calculateNextState();
+  console.log('snake at', snakeBody);
+  _updateClient(); // update client
+  _updateArduino(); // update arduino
+  console.log('Cant stop me now!');
+};
+
+let _numsToString = pos => {
+  return `${pos[0]},${pos[1]}`;
+};
+
 let _resetStates = () => {
   score = 0;
   foodPos = null; // when food is eaten => null
   dir = 'R'; // 'U', 'D', 'L', 'R', randomize on start?
   snakeBody = initialPos.slice();
+  console.log(snakeBody);
   snakeBodySet = new Set();
 };
 
@@ -72,14 +87,6 @@ let _updateClient = () => {
     score: score
   };
   io.emit('gameUpdate', clientGameStatus);
-};
-
-let _numsToString = pos => {
-  return `${pos[0]},${pos[1]}`;
-};
-
-let _stringToNums = foodPosString => {
-  return foodPosString.split(',').map(x => parseInt(x));
 };
 
 let _calculateNextState = () => {
@@ -127,21 +134,9 @@ let _calculateNextState = () => {
   snakeBodySet.add(_numsToString(newHead));
 };
 
-let _gameLoop = () => {
-  _calculateNextState();
-  console.log('snake at', snakeBody);
-  _updateClient(); // update client
-  _updateArduino(); // update arduino
-  console.log('Cant stop me now!');
-};
-
-// start game, 1000 millisecs/frame
-let _startGame;
-
 //----------------------------------------------------------------------------//
 
 //---------------------- SERIAL COMMUNICATION --------------------------------//
-// TODO: calculate whether or not to change snake's moving direction: e.g. can't move opposite dir
 
 // Read data that is available on the serial port and send it to the websocket
 
@@ -160,31 +155,32 @@ parser.on('data', data => {
   } else if (data == 'press') {
     if (!arduinoReady) {
       arduinoReady = true;
-      // check clientReady
+
+      // if clientReady, start game
       if (clientReady) {
         gameInPlay = true;
         console.log('gameInPlay:', true);
 
         _resetStates();
+        _initializeArduino();
 
-        
-
-        //send initial matrix to arduino and client
-        var stringTosend = 'matrix:' + snakeBody.toString();
-        serial.write(stringTosend, function(err) {
-          if (err) {
-            return console.log('Error on write: ', err.message);
-          }
-          console.log('message written');
-        });
-        // start game, 500 millisecs/frame
+        // start game, 1000 millisecs/frame
         _startGame = setInterval(_gameLoop, 1000);
       }
     }
-  } else {
-    // console.log(data);
   }
 });
+
+let _initializeArduino = () => {
+  //send initial matrix to arduino and client
+  let stringTosend = 'matrix:' + snakeBody.toString();
+  serial.write(stringTosend, function(err) {
+    if (err) {
+      return console.log('Error on write: ', err.message);
+    }
+    console.log('message written');
+  });
+};
 
 let _updateArduino = () => {
   // send game update to arduino
