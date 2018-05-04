@@ -2,9 +2,18 @@ let express = require('express'); // web server application
 let app = express(); // webapp
 let http = require('http').Server(app); // connects http library to server
 let io = require('socket.io')(http); // connect websocket library to server
-// let serialPort = require('serialport'); // serial library
-// let readLine = serialPort.parsers.Readline; // read serial data as lines
+let serialPort = require('serialport'); // serial library
+let readLine = serialPort.parsers.Readline; // read serial data as lines
 let serverPort = 8000;
+
+// start the serial port connection and read on newlines
+
+const serial = new serialPort('/dev/ttyUSB0', {
+  baudRate: 115200
+});
+const parser = new readLine({
+  delimiter: '\r\n'
+});
 
 //---------------------- WEBAPP SERVER SETUP ---------------------------------//
 // use express to create the simple webapp
@@ -85,6 +94,7 @@ let _calculateNextState = () => {
 
   curHead = snakeBody[snakeBody.length - 1];
   [curI, curJ] = curHead;
+  console.log(dir);
   [dI, dJ] = dirs[dir];
   [i, j] = [curI + dI, curJ + dJ];
   newHead = [i, j];
@@ -131,15 +141,6 @@ let _startGame;
 //----------------------------------------------------------------------------//
 
 //---------------------- SERIAL COMMUNICATION --------------------------------//
-// start the serial port connection and read on newlines
-
-const serial = new serialPort('/dev/ttyUSB0', {
-  baudRate: 115200
-});
-const parser = new readLine({
-  delimiter: '\r\n'
-});
-
 // TODO: calculate whether or not to change snake's moving direction: e.g. can't move opposite dir
 
 // Read data that is available on the serial port and send it to the websocket
@@ -149,13 +150,13 @@ serial.pipe(parser);
 parser.on('data', data => {
   // on data from the arduino
   if (data == 'up') {
-    dir = 'up';
+    dir = 'U';
   } else if (data == 'down') {
-    dir = 'down';
+    dir = 'D';
   } else if (data == 'left') {
-    dir = 'left';
+    dir = 'L';
   } else if (data == 'right') {
-    dir = 'right';
+    dir = 'R';
   } else if (data == 'press') {
     if (!arduinoReady) {
       arduinoReady = true;
@@ -180,11 +181,12 @@ parser.on('data', data => {
   }
 });
 
-let _updateArduino() => {
-
+let _updateArduino = () => {
   // send game update to arduino
-  var stringTosend =
-    'matrix:' + snakeBody.toString() + ';foodPosition:' + foodPos.toString();
+  var stringTosend = 'matrix:' + snakeBody.toString();
+  if (foodPos) {
+    stringTosend += ';foodPosition:' + foodPos.toString();
+  }
   console.log(stringTosend);
 
   serial.write(stringTosend, function(err) {
@@ -193,8 +195,7 @@ let _updateArduino() => {
     }
     console.log('message written');
   });
-}
-
+};
 
 //----------------------------------------------------------------------------//
 
