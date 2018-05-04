@@ -127,7 +127,7 @@ let _gameLoop = () => {
 };
 
 // start game, 1000 millisecs/frame
-let _startGame = setInterval(_gameLoop, 1000);
+let _startGame;
 
 //----------------------------------------------------------------------------//
 
@@ -156,7 +156,7 @@ parser.on('data', data => {
         console.log('gameInPlay:', true);
 
         // start game, 500 millisecs/frame
-        setInterval(_gameLoop, 1000);
+        _startGame = setInterval(_gameLoop, 1000);
 
         //send initial matrix to arduino and client
         var stringTosend = 'matrix:' + snakeBody.toString();
@@ -202,7 +202,7 @@ io.on('connect', function(socket) {
   if (arduinoReady) {
     gameInPlay = true;
     console.log('gameInPlay:', true);
-    _startGame;
+    _startGame = setInterval(_gameLoop, 1000);
   }
 
   // can only listen for foodPlaced event via socket here
@@ -220,3 +220,4 @@ io.on('connect', function(socket) {
     console.log('disconnected from client');
   });
 });
+
