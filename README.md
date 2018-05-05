@@ -82,17 +82,29 @@ The person playing on the computer will see a realtime game view on the webpage,
 
 ### Rules
 
-If the snake bumps into itself or the walls, the game is over.
+Only one food can be present on the board at any moment. If the snake bumps into itself or the walls, the game is over.
 
 ### Starting the Game
 
 Both the Arduino and the web client need to be connected to play. As soon as the player on Arduino presses the joystick, the game will start.
 
 ### Restarting the Game
-
 The game can simply be restarted by refreshing the webpage on the browser.
 
+## Demo
+
+
+## Application Architecture
+![architecture](https://github.com/virtuositeit/The-New-Snake-Game/blob/master/media/architecture.jpeg)
+
+## Design
+We wanted to reinvent a classic game, and escape from the convention of how players interact with each other in multiplayer games. Instead of competing against each other in the same game, or comparing score in separate games, one player will be placing the food (implementing the game scene), while the other person is controlling the snake to chase the food. As they take turns being the player and game scene implementor, they might discover their interestingly different perspectives.
+
+## State Diagram
+![stateDiagram](https://github.com/virtuositeit/The-New-Snake-Game/blob/master/media/state_diagram.jpeg)
+
 ## Verplank Diagram
+![verplankDiagram](https://github.com/virtuositeit/The-New-Snake-Game/blob/master/media/verplank_diagram.jpeg)
 
 ### Idea
 
@@ -132,5 +144,3 @@ You love the game, and you wish you could play it with your friend (in a new way
 1.  Joystick: change the moving direction of the snake
 2.  Button: select from menu (new game, exit, etc.)
 3.  Laptop: uses the mouse to select the positions of targets
-
-https://goo.gl/yWCmYw
