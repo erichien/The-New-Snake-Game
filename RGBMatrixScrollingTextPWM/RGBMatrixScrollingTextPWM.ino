@@ -134,7 +134,7 @@ byte ledpy = 0;
 #define scrollSpeed 50 // Speed of the scrolling text is conrolled with this constant
 
 boolean gameInPlay = false;
-String displayString = "abcdefghijklmnopqrstuvwxyz";  // String to be displayed
+String displayString = "press to start!";  // String to be displayed
 int ascii = 0;                     // Variable used to index the font array
 int arrayLength = 7;               // Bitmapped data starts being stored in the 8th element of the screen[] array to allow empty space to scroll by at the beginning of the message
 byte byteRead = 0;                 // Variable used to grab an individual column of bitmapped data from the font array
