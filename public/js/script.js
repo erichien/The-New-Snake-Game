@@ -115,6 +115,10 @@
       }
     };
 
+    let _updateScore = () => {
+      document.querySelector('.score').innerHTML = score;
+    };
+
     _createBoard(grid, socket, foodPos);
 
     socket.on('connect', () => {
@@ -133,6 +137,7 @@
       gameInPlay = state.gameInPlay;
       snakeBody = state.snakeBody;
       score = state.score;
+      _updateScore();
       _renderSnake(grid, snakeBody);
 
       if (!state.foodPos && foodPos) {

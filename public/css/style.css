@@ -85,7 +85,7 @@ h1 {
   border-radius: 50%;
 }
 
-.instructions-view {
+.score-instructions-view {
   width: 580px;
   height: 720px;
   min-width: 580px;
@@ -93,8 +93,36 @@ h1 {
   margin-left: 60px;
   margin-right: 60px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.score-view {
+  width: 350px;
+  height: 150px;
+  min-width: 350px;
+  min-height: 150px;
+  margin-left: 60px;
+  margin-right: 60px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 60px;
+  background-color: #f78;
+  border-radius: 50px;
+  box-shadow: 10px 10px 20px #aaa;
+}
+
+.score-view h2 {
+  font-family: 'Amaranth', -apple-system, sans-serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 3em;
+  color: #fff;
+  text-shadow: 0.05em 0.05em 0em #aaa;
+  width: 50px;
 }
 
 .instructions {
@@ -102,6 +130,7 @@ h1 {
   flex-direction: column;
   width: 580px;
   min-width: 580px;
+  margin-top: 60px;
   padding: 60px;
   background-color: #ffbf73;
   border-radius: 50px;
