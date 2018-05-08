@@ -94,8 +94,8 @@ const uint32_t font[192] PROGMEM = { // This array contains the individual bitma
   0x00182424, 0x24241800,    // o
   0x00FC2824, 0x24241800,    // p
   0x00182424, 0x2428FC00,    // q
-  0x00003C08, 0x04040800,    // r
-  0x0000242A, 0x2A120000,    // s
+  0x0000242A, 0x2A120000,    // r
+  0x00003C08, 0x04040800,    // s
   0x0000043E, 0x24040000,    // t
   0x00001C20, 0x20103C00,    // u
   0x000C1020, 0x20100C00,    // v
@@ -131,10 +131,10 @@ int b = 0;
 byte ledpx = 0;        // Bytes used to store the X and Y of the pixel being set by the updateShiftRegisters subroutine
 byte ledpy = 0;
 
-#define scrollSpeed 50 // Speed of the scrolling text is conrolled with this constant
+#define scrollSpeed 120 // Speed of the scrolling text is conrolled with this constant
 
 boolean gameInPlay = false;
-String displayString = "abcdefghijklmnopqrstuvwxyz";  // String to be displayed
+String displayString = "PRESS!";  // String to be displayed
 int ascii = 0;                     // Variable used to index the font array
 int arrayLength = 7;               // Bitmapped data starts being stored in the 8th element of the screen[] array to allow empty space to scroll by at the beginning of the message
 byte byteRead = 0;                 // Variable used to grab an individual column of bitmapped data from the font array
@@ -145,7 +145,7 @@ const int X_PIN = A4;
 const int Y_PIN = A5;
 const int BUTTON_PIN = 2;
 //const int LED_PIN = 13;
-const unsigned long DEBOUNCE_DELAY = 50;  // microseconds
+const unsigned long DEBOUNCE_DELAY = 120;  // microseconds
 const int X_ORIGIN = 520;
 const int Y_ORIGIN = 526;
 const int CHANGE_THRESHOLD = 100;  // defines sensitivity to changing x and y's direction
@@ -348,63 +348,6 @@ void showWelcomeMessage(){
   }
 }
 
-void updateShiftRegistersSlow() {
-  for (int x = 0; x < 8; x++) {               // Loops through the 8x8 array to be displayed, turning on each bit individually at the specified brighness, once for each color
-    for (int y = 0; y < 8; y++) {
-      ledpx = 1 << x;
-      ledpy = 1 << y;
-
-      if (R[x][y]) {                          // If the Red bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
-        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
-        shiftOutFast(0);
-        shiftOutFast(0);
-        shiftOutFast(ledpy);
-        analogWrite(levelPin, 255 - R[x][y]);
-        shiftOutFast(ledpx);
-        bitSet(PORTD, __latchBit);
-        delayMicroseconds(scrollSpeed);
-        analogWrite(levelPin, 255);
-      }
-      else {
-        delayMicroseconds(scrollSpeed / 2);
-      }
-      if (G[x][y]) {                          // If the Green bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
-        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
-        shiftOutFast(0);
-        
-        shiftOutFast(ledpy);
-        analogWrite(levelPin, 255 - G[x][y]);
-        shiftOutFast(0);
-        shiftOutFast(ledpx);
-        bitSet(PORTD, __latchBit);
-        delayMicroseconds(scrollSpeed);
-        analogWrite(levelPin, 255);
-      }
-      else {
-        delayMicroseconds(scrollSpeed / 2);
-      }
-      if (B[x][y]) {                          // If the Blue bit is on, display it at the brighness specified, otherwise delay for about half the time it would have taken to 
-        bitClear(PORTD, __latchBit);          // display it (this keeps the scrolling message from speeding up when displaying the empty spaces between each letter)
-        analogWrite(levelPin, 255 - B[x][y]);
-        shiftOutFast(ledpy);
-        shiftOutFast(0);
-        shiftOutFast(0);
-        shiftOutFast(ledpx);
-        bitSet(PORTD, __latchBit);
-        delayMicroseconds(scrollSpeed);
-        analogWrite(levelPin, 255);
-      }
-      else {
-        delayMicroseconds(scrollSpeed / 2);
-      }
-    }
-  }
-}
-
-
-
-
-
 void setup() {
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
@@ -415,18 +358,14 @@ void setup() {
   attachInterrupt(0, press, LOW);
   //pinMode(LED_PIN, OUTPUT);
   Serial.begin(115200);
-  Serial.setTimeout(100);
+  Serial.setTimeout(300);
   TCCR1B = TCCR1B & 0b11111000 | 0x01;  // Sets the PWM frequency for pin 10 to 31372.55 Hz (a higher frequency is needed because of the speed which the 8x8 matrix is parsed through)
   clearBoard();
   if (!gameInPlay) {
     showWelcomeMessage();
   } else {
     // Render matrix
-    G[0][7] = 128;
-    G[1][7] = 128;
-    R[1][0] = 128;
-    R[2][0] = 128;
-    updateShiftRegistersSlow();
+    updateShiftRegisters();
   }
 }
 void loop() {
@@ -438,13 +377,21 @@ void loop() {
     if (direction != "") Serial.println(direction);
     if (Serial.available()){
       command = Serial.readString();
-      //command.concat(character);
     }
-    Serial.println(command);
+//    Serial.println(command);
     // y = x, x = 7-y
     if (command.length() > 1){
         clearBoard();
-        processCommand(command);
+        if (command.equals("GAME OVER")) {
+//          displayString = "GAME OVER";
+          gameInPlay = false;
+          //memset(screen, 0, sizeof(screen));
+          
+          showWelcomeMessage();
+//          Serial.println(displayString);
+        }else{
+          processCommand(command);
+        }
     }
     command = "";
    
@@ -452,17 +399,13 @@ void loop() {
       gameInPlay = true; 
       Serial.println("press");
       clearBoard();
-      G[7][0] = 128;
-      G[7][1] = 128;
-      R[1][0] = 128;
-      R[2][0] = 128;
       buttonPressed = false;
     }
     if (!gameInPlay) {
       clearBoard();
-      r = 1;
-      b = 1;
-      g = 1;
+      r = 2;
+      b = 0;
+      g = 0;
       if (r+g+b>120) { g = 0;}
       for (int j = 0; j < arrayLength; j++) {                 // Strores the current 8x8 matrix with the bitmap to be displayed
         for (int fx = 0; fx < 8; fx++) {
@@ -475,7 +418,7 @@ void loop() {
         }
       }
     }else {
-      updateShiftRegistersSlow();
+      updateShiftRegisters();
     }
   }
 }
