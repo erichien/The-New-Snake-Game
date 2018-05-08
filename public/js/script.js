@@ -2,6 +2,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     let socket = io(); // websocket to server
     let grid = document.querySelector('.grid');
+    let gameOverView = document.querySelector('.game-over-view');
 
     // game states
     let gameInPlay = false;
@@ -9,8 +10,8 @@
     let foodPos = null;
     let score = 0;
 
-    let _stringToNums = foodPosString => {
-      return foodPosString.split(',').map(x => parseInt(x));
+    let _stringToNums = posString => {
+      return posString.split(',').map(x => parseInt(x));
     };
 
     let _numsToString = pos => {
@@ -53,7 +54,7 @@
     };
 
     // remove food when food is eaten (state.foodPos = null)
-    let _removeFood = stateFoodPos => {
+    let _removeFood = () => {
       let cell = grid.querySelector(
         `div[data-cell-pos=${'"' + _numsToString(foodPos) + '"'}]`
       );
@@ -72,11 +73,11 @@
       }
     };
 
-    let _createBoard = (grid, socket, foodPos) => {
+    let _createBoard = () => {
       for (i of Array(8).keys()) {
         for (j of Array(8).keys()) {
-          let cell = document.createElement('DIV');
-          let button = document.createElement('BUTTON');
+          let cell = document.createElement('div');
+          let button = document.createElement('button');
 
           button.setAttribute('class', 'button');
           button.setAttribute('data-button-pos', `${i},${j}`);
@@ -91,20 +92,22 @@
       }
     };
 
-    let _renderSnake = (grid, snakeBody) => {
+    let _renderSnake = () => {
       if (snakeBody) {
         for (let pos of snakeBody) {
           let cell = grid.querySelector(
             `div[data-cell-pos=${'"' + _numsToString(pos) + '"'}]`
           );
-
-          cell.style.backgroundColor = '#FCBE2C';
           _removeEventListeners(cell);
+
+          // erase food, if mouse ever hovered on a cell before snake passed through
+          cell.querySelector('.button').style.display = 'none';
+          cell.style.backgroundColor = '#FCBE2C';
         }
       }
     };
 
-    let _eraseSnake = (grid, snakeBody) => {
+    let _eraseSnake = () => {
       for (let pos of snakeBody) {
         let cell = grid.querySelector(
           `div[data-cell-pos=${'"' + _numsToString(pos) + '"'}]`
@@ -119,7 +122,11 @@
       document.querySelector('.score').innerHTML = score;
     };
 
-    _createBoard(grid, socket, foodPos);
+    let _renderGameOver = () => {
+    	gameOverView.style.display = 'flex';
+    }
+
+    _createBoard();
 
     socket.on('connect', () => {
       console.log('connected to server');
@@ -130,18 +137,19 @@
       console.log('gameUpdate state', state);
 
       if (!state.gameInPlay) {
+      	_renderGameOver();
         socket.disconnect();
       }
 
-      _eraseSnake(grid, snakeBody);
+      _eraseSnake();
       gameInPlay = state.gameInPlay;
       snakeBody = state.snakeBody;
       score = state.score;
       _updateScore();
-      _renderSnake(grid, snakeBody);
+      _renderSnake();
 
       if (!state.foodPos && foodPos) {
-        _removeFood(foodPos);
+        _removeFood();
       }
     });
   });

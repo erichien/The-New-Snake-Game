@@ -212,7 +212,7 @@ io.on('connect', function(socket) {
     _resetStates();
     gameInPlay = true;
     console.log('gameInPlay:', true);
-    _startGame = setInterval(_gameLoop, 1000);
+    _startGame = setInterval(_gameLoop, 200);
   }
 
   // can only listen for foodPlaced event via socket here
