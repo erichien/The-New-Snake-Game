@@ -62,7 +62,7 @@ let _gameLoop = () => {
   _calculateNextState();
   console.log('snake at', snakeBody);
   _updateClient(); // update client
-  _updateArduino(); // update arduino
+  if (gameInPlay) _updateArduino(); // update arduino
   console.log('Cant stop me now!');
 };
 
@@ -116,8 +116,15 @@ let _calculateNextState = () => {
   ) {
     // game over
     gameInPlay = false;
+    arduinoReady = false;
+    clientReady = false;
     console.log('game over');
-
+    serial.write('GAME OVER', function(err) {
+      if (err) {
+        return console.log('Error on write: ', err.message);
+      }
+      console.log('message written');
+    });
     clearInterval(_startGame);
     return;
   }
@@ -168,6 +175,8 @@ parser.on('data', data => {
         _startGame = setInterval(_gameLoop, 1000);
       }
     }
+  }else {
+    console.log(data);
   }
 });
 
