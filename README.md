@@ -92,7 +92,7 @@ Both the Arduino and the web client need to be connected to play. As soon as the
 The game can simply be restarted by refreshing the webpage on the browser.
 
 ## Demo
-
+https://youtu.be/hxJQJnnfzE4
 
 ## Application Architecture
 ![architecture](https://github.com/virtuositeit/The-New-Snake-Game/blob/master/media/architecture.jpeg)
