@@ -7,7 +7,6 @@ let readLine = serialPort.parsers.Readline; // read serial data as lines
 let serverPort = 8000;
 
 // start the serial port connection and read on newlines
-
 const serial = new serialPort('/dev/ttyUSB0', {
   baudRate: 115200
 });
@@ -16,7 +15,8 @@ const parser = new readLine({
 });
 
 //---------------------- WEBAPP SERVER SETUP ---------------------------------//
-// use express to create the simple webapp
+
+// use express to create the webapp
 app.use(express.static('public')); // find pages in public directory
 
 // start the server and say what port it is on
@@ -146,7 +146,6 @@ let _calculateNextState = () => {
 //---------------------- SERIAL COMMUNICATION --------------------------------//
 
 // Read data that is available on the serial port and send it to the websocket
-
 serial.pipe(parser);
 
 parser.on('data', data => {
@@ -181,8 +180,10 @@ parser.on('data', data => {
 });
 
 let _initializeArduino = () => {
+  
   //send initial matrix to arduino and client
   let stringTosend = 'matrix:' + snakeBody.toString();
+  
   serial.write(stringTosend, function(err) {
     if (err) {
       return console.log('Error on write: ', err.message);
@@ -192,12 +193,12 @@ let _initializeArduino = () => {
 };
 
 let _updateArduino = () => {
+  
   // send game update to arduino
   var stringTosend = 'matrix:' + snakeBody.toString();
   if (foodPos) {
     stringTosend += ';foodPosition:' + foodPos.toString();
   }
-  //console.log(stringTosend);
 
   serial.write(stringTosend, function(err) {
     if (err) {
@@ -212,7 +213,8 @@ let _updateArduino = () => {
 //---------------------- WEBSOCKET COMMUNICATION -----------------------------//
 
 io.on('connect', function(socket) {
-  // call reset to make sure the website is clean
+  
+  // reset to make sure the website is clean
   socket.emit('reset');
   clientReady = true;
   console.log('connected to client');
