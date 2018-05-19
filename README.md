@@ -1,5 +1,9 @@
 # The New Snake Game
 
+We'd like to introduce a new way to play the classic Snake Game.  
+Two players can now play against each other on an Arduino Gameboy and a web browser!  
+One player will be placing the food, while the other controlling the snake.
+
 ## What You'll Need
 
 * Arduino/Genuino Uno Board x1
